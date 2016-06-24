@@ -1,0 +1,37 @@
+extends layout
+
+block content
+  h1= title
+  p Welcome to #{title}
+
+  div(ng-view)
+  script.
+    var app = angular.module('app', ['ngResource', 'ngRoute']);
+    app.config(function($routeProvider) {
+      $routeProvider.when('/users', {
+        templateUrl: 'partials/list.html', controller: 'ListCtrl'
+      }).when('/users/:_id', {
+        templateUrl: 'partials/edit.html', controller: 'EditCtrl'
+      }).otherwise({
+        redirectTo: '/users'
+      });
+    });
+    app.factory('User', function($resource) {
+      return $resource('/api/users/:_id');
+    });
+    app.controller('ListCtrl', function($scope, $route, User) {
+      $scope.users = User.query();
+      $scope.delete = function(_id) {
+        User.delete({_id: _id}, function() {
+          $route.reload();
+        });
+      };
+    });
+    app.controller('EditCtrl', function($scope, $routeParams, $location, User) {
+      if ($routeParams._id != 'new') $scope.user = User.get({_id: $routeParams._id});
+      $scope.edit = function() {
+        User.save($scope.user, function() {
+          $location.url('/');
+        });
+      };
+    });    
